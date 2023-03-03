@@ -1,5 +1,11 @@
 # ReactRendering
 
+## Ways to cause re-render
+
+1. Components calls useState setter function or useReducer deispatch function
+2. if parent component re-render
+3. React context
+
 ## Re-Render scenario
 
 Render Phase and Commit Phase
@@ -15,45 +21,118 @@ Commit Phase :
 
 1. Apply changes to the DOM.
 
-# useState
+# Parent and Child
 
-    NOTE : Remeber that it can re-render but not apply to the dom if there is no difference.
-    NOTE : useReducer was the same, but React version 18, it is different
+Whenever there is a re-render caused by a change in the state of the parent, React will optimize the re-render for you by knowing that the props has to be referencing the same elemeent before and after the render
 
-Render Phase :
+You can extract the expensive child component and instead pass it down as props to the parent component
 
-1. Flag component of state changes
+Optimization :
 
-   - If initial render is completed and the value is the same passed in the setter function, proceeding further is stopped
-   - However if the component has been re-render already then it proceeds (**still re-render**)
+- Same Element Reference : <br>
+  When parent state changes : Yes <br>
+  When parent props changes : No
 
-2. JSX createElement()
-3. Compare Previous Render to New Render react elements
-   - Discard changes if there is no difference else
-   - Changes are made(update,UseState)
+      //ParentOne.js
+      function ParentOne({ children })
+          return <div> {children} </div>
 
-Commit Phase :
+- React.memo : <br> When child props is not affected but has to rerender
 
-5. Apply changes to the dom.
+      //ChildTwo.js
+      export const MemoizedChildTwo = React.memo(ChildTwo);
 
-# State Immutability
+# Incorrect memo with children
 
-Object - set state object correctly
+1.  Incorrect memo with children : No need to wrap your child component with react memo, if the child component itself has children elements.
 
-    const intiState = {fname: "B" , lnamed: "W"}
-    const [person, setPerson] = useState(initState)
+        //ChildThree.js
+        function ChildThree({ children })
+            return <div> {children} </div>
 
-    const newPerson = {...person}
-    newPerson.fname = "Clerk"
-    newPerson.lname = "Kent"
-    setPerson(newPerson)
+        export const MemoizedChildTwo = React.memo(ChildThree);
 
-Array - set state array correctly
+2.  Incorrect memo with Impure Component : Using memo in a child that still needs to update its JSX like date,time,sec or randomize number
 
-    const intiState = ["B" , "W"]
-    const [person, setPerson] = useState(initState)
+3.  Incorrect memo with props Reference : When an object or method is passed down to the child component from the parent component. The parent component re-render causes the new reference of the obj or method thats passed down as props to the child component to re-render.
 
-    const newPerson = [...person]
-    newPerson.push = ("Clerk")
-    newPerson.push = ("Kent")
-    setPerson(newPerson)
+        Passing in obj or methods :
+
+            function App() {
+              const person = {
+                fname: "",
+                lname: "",
+              };
+
+        <ChildComponent person={person} method={method} />
+
+# useMemo and useCallback
+
+Go back and take a look at the useMemo & useCallback hooks
+
+Fix to issue 3 :
+
+- useMemo : instead of passing person obj as a props, pass in memoizedPerson
+
+      const memoizedPerson = useMemo(()=> person)
+
+- useCallback :
+
+      const memoizedHandleClick = useCallback(handleClick, [])
+
+ChildComponent
+
+    <ChildComponent person={memoizedPerson} method={memoizedHandleClick} />
+
+# Context and Render
+
+How context works :
+
+    App -> Parent -> ChildA -> ChildB -> ChildC
+
+    Parent - count state / CountContext.Provider
+    ChildC - useContext count
+
+How context render works :
+
+    state count changes ->
+    Flag Parent for re-render ->
+    Parent renders ContextProvider ->
+    Check ContextProvider value changes ->
+    React makes it way down to Render component ChildC
+
+    Parent Component will render childA-C by default.
+    Context in this case did nothing.
+    Context is use to avoid props drilling.
+
+## Optimize the context rendering
+
+1. Use react memo :
+
+ContextParent.js
+
+    import { MemoizedChildA } from "./ContextChildren";
+
+    <CountProvider value={count}>
+      <MemoizedChildA />
+    </CountProvider>
+
+ContextChildren.js
+
+    export const MemoizedChildA = React.memo(ChildA);
+
+2. Context and Same Element Reference
+
+Make use of the children props. React know that the state was change. The children props ChildA hasn't been modified so, it only re-render component childC as it consumes a context value, whose valuse has been changed.
+
+App.js
+
+      <ContextParent>
+        <ChildA />
+      </ContextParent>
+
+ContextParent.js
+
+      <CountProvider value={count}>
+        {children}
+      </CountProvider>

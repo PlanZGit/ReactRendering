@@ -1,27 +1,25 @@
-import logo from "./logo.svg";
+// import logo from "./logo.svg";
 import "./App.css";
-import UseState from "./components/UseState/UseState";
-import UseReducer from "./components/UseReducer/UseReducer";
+import ContextParent from "./components/Context/ContextParent";
+import { ChildA } from "./components/Context/ContextChildren";
+// import UseState from "./components/UseState/UseState";
+// import UseReducer from "./components/UseReducer/UseReducer";
+// import GrandParentOne from "./Optimization/GrandParentOne";
+// import ParentTwo from "./Optimization/ParentTwo";
 
 function App() {
   return (
     <div className="App">
-      {/* <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header> */}
-      <UseState />
-      <UseReducer />
+      {/* <UseState />
+      <UseReducer /> */}
+
+      {/* <ParentTwo /> */}
+
+      {/* <GrandParentOne /> */}
+
+      <ContextParent>
+        <ChildA />
+      </ContextParent>
     </div>
   );
 }
